@@ -306,12 +306,14 @@ export default function DashboardScreen({ route, navigation }: any) {
     }
   };
 
+    // --- GROQ LLAMA 3 (TEXT TO TEXT) ---
   const handleAiAsk = async (transcribedText?: string, isVoiceMode: boolean = false) => {
     const userQuery = transcribedText || aiInput;
     if (!userQuery.trim()) return;
     
     const shouldSpeak = isVoiceMode; 
-   
+    
+    // 🚨 FIXED: Added user message strictly ONCE
     setChatHistory(prev => [...prev, { role: 'user', text: userQuery }]);
     setIsThinking(true);
     setAiInput(''); 
@@ -332,7 +334,7 @@ export default function DashboardScreen({ route, navigation }: any) {
         3. ALWAYS reply in the exact language used by the patient (e.g. Hindi, Hinglish, English).
         4. Keep your response concise, empathetic, and strictly under 4 sentences.`;
 
-       const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
+        const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
 
         const response = await fetch(groqUrl, {
             method: 'POST',
@@ -359,27 +361,26 @@ export default function DashboardScreen({ route, navigation }: any) {
 
         const aiTextResponse = data.choices[0].message.content;
 
+        // 🚨 FIXED: Added AI message strictly ONCE
         setChatHistory(prev => [...prev, { role: 'ai', text: aiTextResponse }]);
-      setChatHistory(prev => [...prev, { role: 'ai', text: aiTextResponse }]);
         
         if (shouldSpeak) {
-            // 🚨 THE PAN-INDIA LANGUAGE ROUTER 🚨
-            let voiceLang = 'en-IN'; // Default to Indian English
+            let voiceLang = 'en-IN'; 
 
             if (/[\u0900-\u097F]/.test(aiTextResponse)) {
-                voiceLang = 'hi-IN'; // Devanagari (Hindi, Marathi)
+                voiceLang = 'hi-IN'; 
             } else if (/[\u0980-\u09FF]/.test(aiTextResponse)) {
-                voiceLang = 'bn-IN'; // Bengali
+                voiceLang = 'bn-IN'; 
             } else if (/[\u0B80-\u0BFF]/.test(aiTextResponse)) {
-                voiceLang = 'ta-IN'; // Tamil
+                voiceLang = 'ta-IN'; 
             } else if (/[\u0C00-\u0C7F]/.test(aiTextResponse)) {
-                voiceLang = 'te-IN'; // Telugu
+                voiceLang = 'te-IN'; 
             } else if (/[\u0A80-\u0AFF]/.test(aiTextResponse)) {
-                voiceLang = 'gu-IN'; // Gujarati
+                voiceLang = 'gu-IN'; 
             } else if (/[\u0C80-\u0CFF]/.test(aiTextResponse)) {
-                voiceLang = 'kn-IN'; // Kannada
+                voiceLang = 'kn-IN'; 
             } else if (/[\u0D00-\u0D7F]/.test(aiTextResponse)) {
-                voiceLang = 'ml-IN'; // Malayalam
+                voiceLang = 'ml-IN'; 
             }
 
             Speech.speak(aiTextResponse, { 
@@ -395,6 +396,7 @@ export default function DashboardScreen({ route, navigation }: any) {
         setIsThinking(false);
     }
   };
+
 
   // --- UI: NEW PATIENT ONBOARDING FORM ---
   if (isNewProfile) {
