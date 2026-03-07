@@ -45,6 +45,7 @@ export default function DashboardScreen({ route, navigation }: any) {
   const [chatHistory, setChatHistory] = useState<{role: 'user' | 'ai', text: string}[]>([]);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
+  const chatScrollRef = useRef<ScrollView>(null); // 🚨 ADD THIS FOR AUTO-SCROLL
   const theme = useTheme();
   const isDemoMode = route.params?.demoMode || false;
   const demoUserData = route.params?.demoUserData; 
@@ -106,6 +107,37 @@ export default function DashboardScreen({ route, navigation }: any) {
     } finally {
       setLoading(false);
     }
+  };
+  // --- CHAT CONTROLS ---
+  const handleClearChat = () => {
+      setChatHistory([]);
+      setAiInput('');
+      Speech.stop();
+  };
+
+  const handleDownloadChat = () => {
+      if (chatHistory.length === 0) {
+          Alert.alert("Empty", "No chat history to download.");
+          return;
+      }
+
+      // Format the chat into a clean text document
+      const chatText = chatHistory.map(msg => 
+          `${msg.role === 'user' ? patientData?.fullName || 'Patient' : 'Kusha AI'}: ${msg.text}`
+      ).join('\n\n');
+
+      if (Platform.OS === 'web') {
+          // Creates an instant file download in the browser!
+          const blob = new Blob([chatText], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Kushal_Medical_Transcript_${new Date().getTime()}.txt`;
+          a.click();
+          URL.revokeObjectURL(url);
+      } else {
+          Alert.alert("Transcript Export", "File export is fully supported on the Web Dashboard.");
+      }
   };
 
   const handleSaveProfile = async () => {
@@ -356,6 +388,7 @@ export default function DashboardScreen({ route, navigation }: any) {
         if (!response.ok) {
             throw new Error(data.error?.message || 'Groq API Error');
         }
+        
 
         const aiTextResponse = data.choices[0].message.content;
 
@@ -504,11 +537,23 @@ export default function DashboardScreen({ route, navigation }: any) {
           </View>
         </ScrollView>
 
-      {/* --- KUSHA AI CONVERSATIONAL INTERFACE --- */}
+     {/* --- KUSHA AI CONVERSATIONAL INTERFACE --- */}
         <View style={styles.floatingAiWrapper}>
             <Surface style={styles.chatContainer} elevation={3}>
                 
-                <ScrollView style={styles.chatScrollArea} contentContainerStyle={{ padding: 12 }}>
+                {/* 🚨 NEW: Chat Controls Header 🚨 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#F8F9F9', borderBottomWidth: 1, borderColor: '#EAEDED' }}>
+                    <Button icon="download" mode="text" textColor="#34495E" onPress={handleDownloadChat} compact>Download</Button>
+                    <Button icon="delete-sweep" mode="text" textColor="#E74C3C" onPress={handleClearChat} compact>Clear</Button>
+                </View>
+
+                {/* 🚨 NEW: Attached the ref and auto-scroll trigger 🚨 */}
+                <ScrollView 
+                    ref={chatScrollRef}
+                    onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
+                    style={styles.chatScrollArea} 
+                    contentContainerStyle={{ padding: 12 }}
+                >
                     {chatHistory.length === 0 && (
                         <Text style={styles.welcomeText}>Tap the microphone or type below to ask Kusha a question about your health.</Text>
                     )}
