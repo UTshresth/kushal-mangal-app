@@ -359,7 +359,7 @@ export default function DashboardScreen({ route, navigation }: any) {
 
         const aiTextResponse = data.choices[0].message.content;
 
-        setChatHistory(prev => [...prev, { role: 'ai', text: aiTextResponse }]);
+
       setChatHistory(prev => [...prev, { role: 'ai', text: aiTextResponse }]);
         
         if (shouldSpeak) {
